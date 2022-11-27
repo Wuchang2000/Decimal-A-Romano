@@ -19,152 +19,243 @@
                    *DECLARACION DE VARIABLES
 
                    ORDEN EQU  $0000
-                   TEMP  EQU  $0001
+                   TEMP_H EQU $0001
+                   TEMP  EQU  $0002
                    U     EQU  $0010
                    D     EQU  $0011
                    C     EQU  $0012
                    UM    EQU  $0013
-                   SHARE EQU  $0014
                    CONT  EQU  $0020
+                   FED   EQU  $0021
+                   FER   EQU  $0022
+                   FCD   EQU  $0023
+                   FCR   EQU  $0024
 
                    *PROGRAMA
 
                          ORG $8000
 
   8000 8E 00 FF          LDS #$00FF
-  8003 BD 81 B0          JSR SERIAL
+  8003 BD 82 31          JSR SERIAL
 
                    LIMPIA
   8006 7F 00 00          CLR ORDEN
-  8009 7F 00 01          CLR TEMP
-  800C 7F 00 10          CLR U
-  800F 7F 00 11          CLR D
-  8012 7F 00 12          CLR C
-  8015 7F 00 13          CLR UM
-  8018 7F 00 20          CLR CONT
+  8009 7F 00 01          CLR TEMP_H
+  800C 7F 00 02          CLR TEMP
+  800F 7F 00 10          CLR U
+  8012 7F 00 11          CLR D
+  8015 7F 00 12          CLR C
+  8018 7F 00 13          CLR UM
+  801B 7F 00 20          CLR CONT
+  801E 7F 00 21          CLR FED
+  8021 7F 00 22          CLR FER
+  8024 7F 00 23          CLR FCD
+  8027 7F 00 24          CLR FCR
+  802A CE 00 00          LDX #0
+  802D 18 CE 00 00       LDY #0
+  8031 BD 82 5C          JSR BORRA_TODO
 
                    INICIO
 
-  801B 86 3F             LDAA #'?
-  801D 97 00             STAA ORDEN
+  8034 86 3F             LDAA #'?
+  8036 97 00             STAA ORDEN
                    CICLO
-  801F 96 00             LDAA ORDEN
-  8021 81 3F             CMPA #'?
-  8023 27 FA             BEQ  CICLO
-  8025 81 3D             CMPA #'=
-  8027 27 2C             BEQ  D2R
+  8038 96 00             LDAA ORDEN
+  803A 81 3F             CMPA #'?
+  803C 27 FA             BEQ  CICLO
 
-  8029 D6 13             LDAB UM
-  802B 26 08             BNE SAVE
-
-  802D 97 13             STAA UM
-  802F 7C 00 01          INC TEMP
-  8032 7E 80 1B          JMP INICIO
-                   SAVE
-  8035 D6 12             LDAB C
-  8037 26 08             BNE SAVE1
-
-  8039 97 12             STAA C
+  803E BD 82 C3          JSR DECIMAL
   ADDR B1 B2 B3 B4 C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE       2
 
-  803B 7C 00 01          INC TEMP
-  803E 7E 80 1B          JMP INICIO
-                   SAVE1
-  8041 D6 11             LDAB D
-  8043 26 08             BNE SAVE2
+  8041 D6 23             LDAB FCD
+  8043 C1 01             CMPB #1
+  8045 27 0F             BEQ STORE_DECIMAL
+  8047 BD 82 98          JSR ROMANO
+  804A D6 24             LDAB FCR
+  804C C1 01             CMPB #1
+  804E 27 03             BEQ STORE_ROMANO
+  8050 BD 82 81          JSR MENSAJE_ERROR_SIMBOLO
 
-  8045 97 11             STAA D
-  8047 7C 00 01          INC TEMP
-  804A 7E 80 1B          JMP INICIO
-                   SAVE2
+                   STORE_ROMANO
+  8053 7E 81 51          JMP ESPERA_OK
 
-  804D 97 10             STAA U
-  804F 7C 00 01          INC TEMP
-  8052 7E 80 1B          JMP INICIO
+                   STORE_DECIMAL
+  8056 CE 00 03          LDX #3
+  8059 A7 10             STAA $10,X
+  805B 09                DEX
+  805C 7C 00 02          INC TEMP
+                   RELOAD_DATA_DECIMAL
+  805F 86 3F             LDAA #'?
+  8061 97 00             STAA ORDEN
+                   CICLO_GUARDADO_DECIMAL
+  8063 96 00             LDAA ORDEN
+  8065 81 3F             CMPA #'?
+  8067 27 FA             BEQ CICLO_GUARDADO_DECIMAL
+  8069 81 3D             CMPA #'=
+  806B 27 24             BEQ REVISA_CUATRO
+  806D D6 02             LDAB TEMP
+  806F C1 04             CMPB #4
+  8071 27 18             BEQ IMPRIME_ERROR_MAX_DECIMAL
+  8073 BD 82 C3          JSR DECIMAL
+  8076 D6 21             LDAB FED
+  8078 C1 00             CMPB #0
+  807A 26 09             BNE IMPRIME_ERROR_SIMBOLO
+  807C A7 10             STAA $10,X
+  807E 09                DEX
+  807F 7C 00 02          INC TEMP
+  8082 7E 80 5F          JMP RELOAD_DATA_DECIMAL
+
+                   IMPRIME_ERROR_SIMBOLO
+  8085 BD 82 81          JSR MENSAJE_ERROR_SIMBOLO
+  8088 7E 81 51          JMP ESPERA_OK
+
+                   IMPRIME_ERROR_MAX_DECIMAL
+  808B BD 82 6A          JSR MENSAJE_ERROR_MAX
+  808E 7E 81 51          JMP ESPERA_OK
+
+                   REVISA_CUATRO
+  8091 CE 00 00          LDX #0
+  8094 96 02             LDAA TEMP
+  8096 81 04             CMPA #4
+  8098 23 06             BLS D2R
+  809A BD 82 6A          JSR MENSAJE_ERROR_MAX
+  809D 7E 81 51          JMP ESPERA_OK
 
                    *** Convierte decimal a romano ***
                    D2R
-                   *** Verifica cuantos digitos hay **
-                         *JSR DESPLAZA
-  8055 96 01             LDAA TEMP
-  8057 81 03             CMPA #3
-  8059 27 1D             BEQ ACOMODA3
-  805B 81 02             CMPA #2
-  805D 27 2B             BEQ ACOMODA2
-  805F 81 01             CMPA #1
-  8061 27 38             BEQ ACOMODA1
 
-  8063 D6 13             LDAB UM
-  8065 C1 1E             CMPB #30
-  8067 27 3C             BEQ MD
-
-                   UMCICLO
-  8069 86 4D             LDAA #'M
-  806B 97 14             STAA SHARE
-  806D BD 81 F7          JSR DATARX
-  8070 5A                DECB
-  8071 C1 30             CMPB #$30
-  8073 27 30             BEQ MD
-  8075 7E 80 69          JMP UMCICLO
-
-                   ACOMODA3
-                         *** Baja decena a unidad ***
-  8078 96 11             LDAA D
-  807A 97 10             STAA U
-                         *** Baja centena a unidad ***
-  807C 96 12             LDAA C
-  807E 97 11             STAA D
-                         *** Baja la unidad de millar por centena ***
-  8080 96 13             LDAA UM
-  8082 97 12             STAA C
-  8084 7F 00 13          CLR UM
-  8087 7E 80 A5          JMP MD
-
-                   ACOMODA2
-                         *** Baja centena a unidad ***
-  808A 96 12             LDAA C
-  808C 97 10             STAA U
-                         *** Baja unidad de millar a decena ***
-  808E 96 13             LDAA UM
-  8090 97 11             STAA D
-                         *** Limpia datos ***
-  8092 7F 00 12          CLR C
-  8095 7F 00 13          CLR UM
-  8098 7E 80 AE          JMP MD2
+  80A0 96 02             LDAA TEMP
+  80A2 81 03             CMPA #3
+  80A4 27 36             BEQ ACOMODA3
+  80A6 81 02             CMPA #2
+  80A8 27 55             BEQ ACOMODA2
+  80AA 81 01             CMPA #1
+  80AC 27 71             BEQ ACOMODA1
 
   ADDR B1 B2 B3 B4 C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE       3
 
-                   ACOMODA1
-                         *** Baja unidad de millar a unidad ***
-  809B 96 13             LDAA UM
-  809D 97 10             STAA U
+  80AE 96 13             LDAA UM
+  80B0 A7 80             STAA $80,X
+  80B2 96 12             LDAA C
+  80B4 A7 81             STAA $81,X
+  80B6 96 11             LDAA D
+  80B8 A7 82             STAA $82,X
+  80BA 96 10             LDAA U
+  80BC A7 83             STAA $83,X
+  80BE 86 3D             LDAA #'=
+  80C0 A7 84             STAA $84,X
+  80C2 96 02             LDAA TEMP
+  80C4 4C                INCA
+  80C5 97 02             STAA TEMP
+  80C7 DE 01             LDX TEMP_H
+
+  80C9 D6 13             LDAB UM
+  80CB C1 1E             CMPB #30
+  80CD 27 67             BEQ MD
+
+                   UMCICLO
+  80CF 86 4D             LDAA #'M
+  80D1 BD 82 D7          JSR DATARX
+  80D4 5A                DECB
+  80D5 C1 30             CMPB #$30
+  80D7 27 5D             BEQ MD
+  80D9 7E 80 CF          JMP UMCICLO
+
+                   ACOMODA3
+  80DC 86 3D             LDAA #'=
+  80DE A7 83             STAA $83,X
+                         *** Baja decena a unidad ***
+  80E0 96 11             LDAA D
+  80E2 97 10             STAA U
+  80E4 A7 82             STAA $82,X
+                         *** Baja centena a decena ***
+  80E6 96 12             LDAA C
+  80E8 97 11             STAA D
+  80EA A7 81             STAA $81,X
+                         *** Baja la unidad de millar por centena ***
+  80EC 96 13             LDAA UM
+  80EE 97 12             STAA C
+  80F0 A7 80             STAA $80,X
+  80F2 7F 00 13          CLR UM
+  80F5 96 02             LDAA TEMP
+  80F7 4C                INCA
+  80F8 97 02             STAA TEMP
+  80FA DE 01             LDX TEMP_H
+  80FC 7E 81 36          JMP MD
+
+                   ACOMODA2
+  80FF 86 3D             LDAA #'=
+  8101 A7 82             STAA $82,X
+                         *** Baja centena a unidad ***
+  8103 96 12             LDAA C
+  8105 97 10             STAA U
+  8107 A7 81             STAA $81,X
+                         *** Baja unidad de millar a decena ***
+  8109 96 13             LDAA UM
+  810B 97 11             STAA D
+  810D A7 80             STAA $80,X
                          *** Limpia datos ***
-  809F 7F 00 13          CLR UM
-  80A2 7E 80 B7          JMP MD3
+  810F 7F 00 12          CLR C
+  8112 7F 00 13          CLR UM
+  8115 96 02             LDAA TEMP
+  8117 4C                INCA
+  ADDR B1 B2 B3 B4 C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE       4
+
+  8118 97 02             STAA TEMP
+  811A DE 01             LDX TEMP_H
+  811C 7E 81 3F          JMP MD2
+
+                   ACOMODA1
+  811F 86 3D             LDAA #'=
+  8121 A7 81             STAA $81,X
+                         *** Baja unidad de millar a unidad ***
+  8123 96 13             LDAA UM
+  8125 97 10             STAA U
+  8127 A7 80             STAA $80,X
+                         *** Limpia datos ***
+  8129 7F 00 13          CLR UM
+  812C 96 02             LDAA TEMP
+  812E 4C                INCA
+  812F 97 02             STAA TEMP
+  8131 DE 01             LDX TEMP_H
+  8133 7E 81 48          JMP MD3
 
                    MD
 
-  80A5 D6 12             LDAB C
-  80A7 C1 30             CMPB #$30
-  80A9 27 03             BEQ MD2
-  80AB BD 81 61          JSR FORMATOCENTENA
+  8136 D6 12             LDAB C
+  8138 C1 30             CMPB #$30
+  813A 27 03             BEQ MD2
+  813C BD 81 EE          JSR FORMATOCENTENA
 
                    MD2
 
-  80AE D6 11             LDAB D
-  80B0 C1 30             CMPB #$30
-  80B2 27 03             BEQ MD3
-  80B4 BD 81 12          JSR FORMATODECENA
+  813F D6 11             LDAB D
+  8141 C1 30             CMPB #$30
+  8143 27 03             BEQ MD3
+  8145 BD 81 AB          JSR FORMATODECENA
 
                    MD3
 
-  80B7 D6 10             LDAB U
-  80B9 C1 30             CMPB #$30
-  80BB 27 03             BEQ SALTE
-  80BD BD 80 C3          JSR FORMATOUNIDAD
+  8148 D6 10             LDAB U
+  814A C1 30             CMPB #$30
+  814C 27 03             BEQ ESPERA_OK
+  814E BD 81 68          JSR FORMATOUNIDAD
 
-                   SALTE
-  80C0 7E 80 06          JMP LIMPIA
+                   ESPERA_OK
+
+  8151 86 3F             LDAA #'?
+  8153 97 00             STAA ORDEN
+                   CICLO_O
+  8155 96 00             LDAA ORDEN
+  8157 81 3F             CMPA #'?
+  8159 27 FA             BEQ  CICLO_O
+  815B 81 4F             CMPA #'O
+  815D 27 00             BEQ CICLO_K
+                   CICLO_K
+  815F 96 00             LDAA ORDEN
+  8161 81 4B             CMPA #'K
+  8163 26 F0             BNE CICLO_O
+  8165 7E 80 06          JMP LIMPIA
 
                    ***********************************
                    * Unidades
@@ -172,54 +263,48 @@
 
                    FORMATOUNIDAD
 
-  80C3 96 10             LDAA U
-  80C5 81 34             CMPA #$34
-  80C7 27 3A             BEQ USPECIAL
-  80C9 25 19             BLO UCICLO
-  80CB 81 39             CMPA #$39
-  80CD 27 04             BEQ USPECIAL9
-  80CF 81 35             CMPA #$35
-  80D1 24 20             BHS USPECIAL5
+  8168 96 10             LDAA U
+  816A 81 34             CMPA #$34
+  816C 27 32             BEQ USPECIAL
+  ADDR B1 B2 B3 B4 C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE       5
+
+  816E 25 15             BLO UCICLO
+  8170 81 39             CMPA #$39
+  8172 27 04             BEQ USPECIAL9
+  8174 81 35             CMPA #$35
+  8176 24 1A             BHS USPECIAL5
 
                    USPECIAL9
-  80D3 86 49             LDAA #'I
-  80D5 97 14             STAA SHARE
-  80D7 BD 81 F7          JSR DATARX
-  80DA 86 58             LDAA #'X
-  80DC 97 14             STAA SHARE
-  80DE BD 81 F7          JSR DATARX
-  80E1 7E 81 11          JMP FINU
+  8178 86 49             LDAA #'I
+  817A BD 82 D7          JSR DATARX
+  817D 86 58             LDAA #'X
+  817F BD 82 D7          JSR DATARX
+  8182 7E 81 AA          JMP FINU
 
                    UCICLO
-  80E4 86 49             LDAA #'I
-  80E6 97 14             STAA SHARE
-  80E8 BD 81 F7          JSR DATARX
-  80EB 5A                DECB
-  80EC C1 30             CMPB #$30
-  80EE 27 21             BEQ FINU
-  80F0 7E 80 E4          JMP UCICLO
-
-  ADDR B1 B2 B3 B4 C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE       4
+  8185 86 49             LDAA #'I
+  8187 BD 82 D7          JSR DATARX
+  818A 5A                DECB
+  818B C1 30             CMPB #$30
+  818D 27 1B             BEQ FINU
+  818F 7E 81 85          JMP UCICLO
 
                    USPECIAL5
-  80F3 86 56             LDAA #'V
-  80F5 97 14             STAA SHARE
-  80F7 BD 81 F7          JSR DATARX
-  80FA C0 05             SUBB #5
-  80FC C1 30             CMPB #$30
-  80FE 22 E4             BHI UCICLO
-  8100 7E 81 11          JMP FINU
+  8192 86 56             LDAA #'V
+  8194 BD 82 D7          JSR DATARX
+  8197 C0 05             SUBB #5
+  8199 C1 30             CMPB #$30
+  819B 22 E8             BHI UCICLO
+  819D 7E 81 AA          JMP FINU
 
                    USPECIAL
-  8103 86 49             LDAA #'I
-  8105 97 14             STAA SHARE
-  8107 BD 81 F7          JSR DATARX
-  810A 86 56             LDAA #'V
-  810C 97 14             STAA SHARE
-  810E BD 81 F7          JSR DATARX
+  81A0 86 49             LDAA #'I
+  81A2 BD 82 D7          JSR DATARX
+  81A5 86 56             LDAA #'V
+  81A7 BD 82 D7          JSR DATARX
 
                    FINU
-  8111 39                RTS
+  81AA 39                RTS
 
                    ***********************************
                    * Dencenas
@@ -227,54 +312,48 @@
 
                    FORMATODECENA
 
-  8112 96 11             LDAA D
-  8114 81 34             CMPA #$34
-  8116 27 3A             BEQ DSPECIAL
-  8118 25 19             BLO DCICLO
-  811A 81 39             CMPA #$39
-  811C 27 04             BEQ DSPECIAL9
-  811E 81 35             CMPA #$35
-  8120 24 20             BHS DSPECIAL5
+  81AB 96 11             LDAA D
+  81AD 81 34             CMPA #$34
+  81AF 27 32             BEQ DSPECIAL
+  81B1 25 15             BLO DCICLO
+  81B3 81 39             CMPA #$39
+  81B5 27 04             BEQ DSPECIAL9
+  81B7 81 35             CMPA #$35
+  81B9 24 1A             BHS DSPECIAL5
 
                    DSPECIAL9
-  8122 86 58             LDAA #'X
-  8124 97 14             STAA SHARE
-  8126 BD 81 F7          JSR DATARX
-  8129 86 43             LDAA #'C
-  812B 97 14             STAA SHARE
-  812D BD 81 F7          JSR DATARX
-  8130 7E 81 60          JMP FIND
+  81BB 86 58             LDAA #'X
+  81BD BD 82 D7          JSR DATARX
+  81C0 86 43             LDAA #'C
+  81C2 BD 82 D7          JSR DATARX
+  81C5 7E 81 ED          JMP FIND
 
                    DCICLO
-  8133 86 58             LDAA #'X
-  8135 97 14             STAA SHARE
-  8137 BD 81 F7          JSR DATARX
-  813A 5A                DECB
-  813B C1 30             CMPB #$30
-  813D 27 21             BEQ FIND
-  813F 7E 81 33          JMP DCICLO
+  81C8 86 58             LDAA #'X
+  81CA BD 82 D7          JSR DATARX
+  81CD 5A                DECB
+  81CE C1 30             CMPB #$30
+  ADDR B1 B2 B3 B4 C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE       6
+
+  81D0 27 1B             BEQ FIND
+  81D2 7E 81 C8          JMP DCICLO
 
                    DSPECIAL5
-  8142 86 4C             LDAA #'L
-  8144 97 14             STAA SHARE
-  8146 BD 81 F7          JSR DATARX
-  8149 C0 05             SUBB #5
-  814B C1 30             CMPB #$30
-  814D 22 E4             BHI DCICLO
-  814F 7E 81 60          JMP FIND
+  81D5 86 4C             LDAA #'L
+  81D7 BD 82 D7          JSR DATARX
+  81DA C0 05             SUBB #5
+  81DC C1 30             CMPB #$30
+  81DE 22 E8             BHI DCICLO
+  81E0 7E 81 ED          JMP FIND
 
                    DSPECIAL
-  8152 86 58             LDAA #'X
-  8154 97 14             STAA SHARE
-  ADDR B1 B2 B3 B4 C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE       5
-
-  8156 BD 81 F7          JSR DATARX
-  8159 86 4C             LDAA #'L
-  815B 97 14             STAA SHARE
-  815D BD 81 F7          JSR DATARX
+  81E3 86 58             LDAA #'X
+  81E5 BD 82 D7          JSR DATARX
+  81E8 86 4C             LDAA #'L
+  81EA BD 82 D7          JSR DATARX
 
                    FIND
-  8160 39                RTS
+  81ED 39                RTS
 
                    ***********************************
                    * Centenas
@@ -282,125 +361,202 @@
 
                    FORMATOCENTENA
 
-  8161 96 12             LDAA C
-  8163 81 34             CMPA #$34
-  8165 27 3A             BEQ CSPECIAL
-  8167 25 19             BLO CCICLO
-  8169 81 39             CMPA #$39
-  816B 27 04             BEQ CSPECIAL9
-  816D 81 35             CMPA #$35
-  816F 24 20             BHS CSPECIAL5
+  81EE 96 12             LDAA C
+  81F0 81 34             CMPA #$34
+  81F2 27 32             BEQ CSPECIAL
+  81F4 25 15             BLO CCICLO
+  81F6 81 39             CMPA #$39
+  81F8 27 04             BEQ CSPECIAL9
+  81FA 81 35             CMPA #$35
+  81FC 24 1A             BHS CSPECIAL5
 
                    CSPECIAL9
-  8171 86 43             LDAA #'C
-  8173 97 14             STAA SHARE
-  8175 BD 81 F7          JSR DATARX
-  8178 86 4D             LDAA #'M
-  817A 97 14             STAA SHARE
-  817C BD 81 F7          JSR DATARX
-  817F 7E 81 AF          JMP FINC
+  81FE 86 43             LDAA #'C
+  8200 BD 82 D7          JSR DATARX
+  8203 86 4D             LDAA #'M
+  8205 BD 82 D7          JSR DATARX
+  8208 7E 82 30          JMP FINC
 
                    CCICLO
-  8182 86 43             LDAA #'C
-  8184 97 14             STAA SHARE
-  8186 BD 81 F7          JSR DATARX
-  8189 5A                DECB
-  818A C1 30             CMPB #$30
-  818C 27 21             BEQ FINC
-  818E 7E 81 82          JMP CCICLO
+  820B 86 43             LDAA #'C
+  820D BD 82 D7          JSR DATARX
+  8210 5A                DECB
+  8211 C1 30             CMPB #$30
+  8213 27 1B             BEQ FINC
+  8215 7E 82 0B          JMP CCICLO
 
                    CSPECIAL5
-  8191 86 44             LDAA #'D
-  8193 97 14             STAA SHARE
-  8195 BD 81 F7          JSR DATARX
-  8198 C0 05             SUBB #5
-  819A C1 30             CMPB #$30
-  819C 22 E4             BHI CCICLO
-  819E 7E 81 AF          JMP FINC
+  8218 86 44             LDAA #'D
+  821A BD 82 D7          JSR DATARX
+  821D C0 05             SUBB #5
+  821F C1 30             CMPB #$30
+  8221 22 E8             BHI CCICLO
+  8223 7E 82 30          JMP FINC
 
                    CSPECIAL
-  81A1 86 43             LDAA #'C
-  81A3 97 14             STAA SHARE
-  81A5 BD 81 F7          JSR DATARX
-  81A8 86 44             LDAA #'D
-  81AA 97 14             STAA SHARE
-  81AC BD 81 F7          JSR DATARX
+  8226 86 43             LDAA #'C
+  8228 BD 82 D7          JSR DATARX
+  822B 86 44             LDAA #'D
+  822D BD 82 D7          JSR DATARX
 
                    FINC
-  81AF 39                RTS
+  ADDR B1 B2 B3 B4 C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE       7
+
+  8230 39                RTS
 
                    ***********************************
                    * SERIAL
                    ***********************************
 
-  ADDR B1 B2 B3 B4 C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE       6
-
                    SERIAL
 
-  81B0 86 00             LDAA  #$00    * CONFIG TODO EL PUERTO  A COMO ENTRADAS
-  81B2 B7 10 01          STAA  DDRA    * EL PUERTO A
+  8231 86 00             LDAA  #$00    * CONFIG TODO EL PUERTO  A COMO ENTRADAS
+  8233 B7 10 01          STAA  DDRA    * EL PUERTO A
 
-  81B5 86 FF             LDAA  #$FF    * CONFIG TODO EL PUERTO  G COMO SALIDAS
-  81B7 B7 10 03          STAA  DDRG    * EL PUERTO G
+  8236 86 FF             LDAA  #$FF    * CONFIG TODO EL PUERTO  G COMO SALIDAS
+  8238 B7 10 03          STAA  DDRG    * EL PUERTO G
 
-  81BA 86 00             LDAA  #$00    * SE PONE PUERTO G EN CEROS
-  81BC B7 10 02          STAA  PORTG
+  823B 86 00             LDAA  #$00    * SE PONE PUERTO G EN CEROS
+  823D B7 10 02          STAA  PORTG
 
 
-  81BF CC 30 2C          LDD   #$302C  * CONFIGURA PUERTO SERIAL
-  81C2 B7 10 2B          STAA  BAUD    * BAUD  9600  para cristal de 8MHz
-  81C5 F7 10 2D          STAB  SCCR2   * HABILITA  RX Y TX PERO INTERRUPCN SOLO
+  8240 CC 30 2C          LDD   #$302C  * CONFIGURA PUERTO SERIAL
+  8243 B7 10 2B          STAA  BAUD    * BAUD  9600  para cristal de 8MHz
+  8246 F7 10 2D          STAB  SCCR2   * HABILITA  RX Y TX PERO INTERRUPCN SOLO
 .                  RX
-  81C8 86 00             LDAA  #$00
-  81CA B7 10 2C          STAA  SCCR1   * 8 BITS
+  8249 86 00             LDAA  #$00
+  824B B7 10 2C          STAA  SCCR1   * 8 BITS
 
-  81CD 86 FE             LDAA  #$FE    * CONFIG PUERTO D COMO SALIDAS (EXCEPTO
+  824E 86 FE             LDAA  #$FE    * CONFIG PUERTO D COMO SALIDAS (EXCEPTO
 .                  PD0)
-  81CF B7 10 09          STAA  DDRD    * SEA  ENABLE DEL DISPLAY  PD4  Y RS PD3
+  8250 B7 10 09          STAA  DDRD    * SEA  ENABLE DEL DISPLAY  PD4  Y RS PD3
 
 
-  81D2 86 04             LDAA  #$04
-  81D4 B7 10 3C          STAA  HPRIO
+  8253 86 04             LDAA  #$04
+  8255 B7 10 3C          STAA  HPRIO
 
-  81D7 86 00             LDAA  #$00
-  81D9 06                TAP
-  81DA 39                RTS
-
-                   ***********************************
-                   * CARRY RETURN
-                   ***********************************
-
-                   CRYTRN
-  81DB CE 10 2E           LDX   #SCSR
-  81DE B6 10 2E           LDAA  SCSR
-  81E1 86 0A              LDAA  #$0A
-  81E3 B7 10 2F           STAA  SCDR
-                   CR1
-  81E6 1F 00 80 FC        BRCLR $00,X,#$80 CR1
-
-  81EA B6 10 2E           LDAA SCSR
-  81ED 86 0D              LDAA #$0D
-  81EF B7 10 2F           STAA SCDR
-                   CR2
-  81F2 1F 00 80 FC        BRCLR $00,X,#$80 CR2
-
-  81F6 39                 RTS
+  8258 86 00             LDAA  #$00
+  825A 06                TAP
+  825B 39                RTS
 
                    ***********************************
-                   *  DESPLIEGUE DE DATO RECIBIDO
+                   *  Borra todo
+                   ***********************************
+
+                   BORRA_TODO
+  825C 86 00             LDAA #0
+  825E A7 80             STAA $80,X
+  8260 08                INX
+  8261 8C 00 20          CPX #$20
+  8264 26 F6             BNE BORRA_TODO
+  8266 CE 00 00          LDX #0
+
+  8269 39                RTS
+
+                   ***********************************
+                   *  Error en numero maximo
+                   ***********************************
+
+                   MENSAJE_ERROR_MAX
+  826A CE 10 4F          LDX #MENSAJE_1
+  826D 18 CE 00 00       LDY #0
+                   CICLO_ERROR_MAX
+  8271 A6 00             LDAA 0,X
+  8273 81 26             CMPA #'&
+  8275 27 09             BEQ SALTE_ERROR_MAX
+  8277 08                INX
+  8278 18 A7 80          STAA $80,Y
+  827B 18 08             INY
+  ADDR B1 B2 B3 B4 C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE       8
+
+  827D 7E 82 71          JMP CICLO_ERROR_MAX
+
+                   SALTE_ERROR_MAX
+  8280 39                RTS
+
+                   ***********************************
+                   *  Error por simbolo invalido
+                   ***********************************
+
+                   MENSAJE_ERROR_SIMBOLO
+  8281 CE 10 67          LDX #MENSAJE_2
+  8284 18 CE 00 00       LDY #0
+                   CICLO_ERROR_SIMBOLO
+  8288 A6 00             LDAA 0,X
+  828A 81 26             CMPA #'&
+  828C 27 09             BEQ SALTE_ERROR_SIMBOLO
+  828E 08                INX
+  828F 18 A7 80          STAA $80,Y
+  8292 18 08             INY
+  8294 7E 82 88          JMP CICLO_ERROR_SIMBOLO
+
+                   SALTE_ERROR_SIMBOLO
+  8297 39                RTS
+
+                   ***********************************
+                   *  Romano
+                   ***********************************
+
+                   ROMANO
+  8298 81 49             CMPA #'I
+  829A 27 1B             BEQ CONFIRMA_ROMANO
+  829C 81 56             CMPA #'V
+  829E 27 17             BEQ CONFIRMA_ROMANO
+  82A0 81 58             CMPA #'X
+  82A2 27 13             BEQ CONFIRMA_ROMANO
+  82A4 81 4C             CMPA #'L
+  82A6 27 0F             BEQ CONFIRMA_ROMANO
+  82A8 81 43             CMPA #'C
+  82AA 27 0B             BEQ CONFIRMA_ROMANO
+  82AC 81 44             CMPA #'D
+  82AE 27 07             BEQ CONFIRMA_ROMANO
+  82B0 81 4D             CMPA #'M
+  82B2 27 03             BEQ CONFIRMA_ROMANO
+  82B4 7E 82 BE          JMP ERROR_FORMA_ROMANO
+
+                   CONFIRMA_ROMANO
+  82B7 C6 01             LDAB #1
+  82B9 D7 24             STAB FCR
+  82BB 7E 82 C2          JMP CORRECT_ROMANO
+
+                   ERROR_FORMA_ROMANO
+  82BE C6 01             LDAB #1
+  82C0 D7 22             STAB FER
+
+                   CORRECT_ROMANO
+  82C2 39                RTS
+
+                   ***********************************
+                   *  Decimal
+                   ***********************************
+
+                   DECIMAL
+  82C3 81 30             CMPA #$30
+  82C5 25 0B             BLO ERROR_FORMA
+  82C7 81 39             CMPA #$39
+  ADDR B1 B2 B3 B4 C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE       9
+
+  82C9 22 07             BHI ERROR_FORMA
+  82CB C6 01             LDAB #1
+  82CD D7 23             STAB FCD
+  82CF 7E 82 D6          JMP CORRECT_DECIMAL
+
+                   ERROR_FORMA
+  82D2 C6 01             LDAB #1
+  82D4 D7 21             STAB FED
+
+                   CORRECT_DECIMAL
+  82D6 39                RTS
+
+                   ***********************************
+                   *  DESPLIEGUE DE DATOS
                    ***********************************
 
                    DATARX
-  81F7 CE 10 2E           LDX   #SCSR
-  81FA B6 10 2E           LDAA  SCSR
-  81FD 96 14              LDAA  SHARE
-  81FF B7 10 2F           STAA  SCDR
-                   DT1
-  8202 1F 00 80 FC        BRCLR $00,X,#$80 DT1
+  82D7 A7 80             STAA $80,X
+  82D9 08                INX
 
-  8206 39                 RTS
-
-  ADDR B1 B2 B3 B4 C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE       7
+  82DA 39                RTS
 
                    ***********************************
                    * ATENCION A INTERRUPCION SERIAL
@@ -418,6 +574,22 @@
   F10A 3B                RTI
 
                    ***********************************
+                   * MENSAJE DE ERROR
+                   ***********************************
+                         ORG $104F
+  104F 4E 55 6D 65 MENSAJE_1  FCC "NUmero fuera del limite&"
+. 1053 72 6F 20 66
+. 1057 75 35 72 61
+. 105B 20 64 65 6C
+. 105F 20 6C 69 00
+. 1063 69 74 65 26
+  1067 53 69 6D 62 MENSAJE_2  FCC "Simbolo invAlido&"
+. 106B 6F 6C 6F 20
+. 106F 69 6E 76 41
+. 1073 6C 69 64 6F
+. 1077 26
+
+                   ***********************************
                    * VECTOR INTERRUPCION SERIAL
                    ***********************************
                           ORG   $FFD6
@@ -429,70 +601,94 @@
                           ORG    $FFFE
   FFFE 80 00       RESET  FCB    $80,$00
                    ***********************************
+  ADDR B1 B2 B3 B4 C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE      10
+
                           END
 
   Symbol Table 
 
-  CSPECIAL5          8191
-  CSPECIAL9          8171
-  DCICLO             8133
+  CSPECIAL5          8218
+  TEMP_H             0001
+  CSPECIAL9          81FE
+  DCICLO             81C8
+  ERROR_FORMA        82D2
+  MENSAJE_ERROR_SIMBOLO 8281
   UM                 0013
-  SERIAL             81B0
-  UMCICLO            8069
-  DSPECIAL5          8142
-  DSPECIAL9          8122
+  SERIAL             8231
+  UMCICLO            80CF
+  DECIMAL            82C3
+  DSPECIAL5          81D5
+  DSPECIAL9          81BB
   C                  0012
   D                  0011
-  SAVE               8035
-  CR1                81E6
+  ESPERA_OK          8151
   U                  0010
-  CR2                81F2
   CSCTL              105D
+  MENSAJE_ERROR_MAX  826A
+  CICLO_ERROR_MAX    8271
+  MENSAJE_1          104F
+  MENSAJE_2          1067
+  IMPRIME_ERROR_SIMBOLO 8085
+  IMPRIME_ERROR_MAX_DECIMAL 808B
+  CORRECT_DECIMAL    82D6
   SCCR1              102C
   SCCR2              102D
-  CCICLO             8182
-  USPECIAL           8103
-  TEMP               0001
+  CCICLO             820B
+  USPECIAL           81A0
+  TEMP               0002
   BAUD               102B
   LIMPIA             8006
-  CICLO              801F
-  DSPECIAL           8152
-  CRYTRN             81DB
-  SHARE              0014
-  UCICLO             80E4
+  STORE_ROMANO       8053
+  FCD                0023
+  CICLO              8038
+  DSPECIAL           81E3
+  FCR                0024
+  ROMANO             8298
+  UCICLO             8185
   OPT2               1038
-  ACOMODA1           809B
-  ACOMODA2           808A
-  ACOMODA3           8078
+  FED                0021
+  CONFIRMA_ROMANO    82B7
+  BORRA_TODO         825C
+  ACOMODA1           811F
+  ACOMODA2           80FF
+  ACOMODA3           80DC
+  FER                0022
   RESET              FFFE
-  MD                 80A5
-  MD2                80AE
-  Symbol Table     C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE       8
-
-  MD3                80B7
-  FORMATOCENTENA     8161
+  MD                 8136
+  CICLO_K            815F
+  MD2                813F
+  MD3                8148
+  CICLO_O            8155
+  ERROR_FORMA_ROMANO 82BE
+  RELOAD_DATA_DECIMAL 805F
+  FORMATOCENTENA     81EE
   ORDEN              0000
-  DT1                8202
   HPRIO              103C
-  SALTE              80C0
+  CICLO_GUARDADO_DECIMAL 8063
   SCSR               102E
-  FORMATODECENA      8112
-  D2R                8055
+  SALTE_ERROR_MAX    8280
+  CORRECT_ROMANO     82C2
+  Symbol Table     C:\Users\Ian\Desktop\Proyecto2_Roma\Roma.asc     PAGE      11
+
+  FORMATODECENA      81AB
+  D2R                80A0
+  STORE_DECIMAL      8056
   PORTG              1002
   CONT               0020
+  REVISA_CUATRO      8091
   DDRA               1001
   DDRD               1009
-  DATARX             81F7
+  DATARX             82D7
   DDRG               1003
   SCDR               102F
-  FINC               81AF
-  FIND               8160
-  CSPECIAL           81A1
-  USPECIAL5          80F3
-  USPECIAL9          80D3
-  FINU               8111
-  FORMATOUNIDAD      80C3
-  SAVE1              8041
+  FINC               8230
+  FIND               81ED
+  CSPECIAL           8226
+  USPECIAL5          8192
+  USPECIAL9          8178
+  FINU               81AA
+  FORMATOUNIDAD      8168
+  SALTE_ERROR_SIMBOLO 8297
+  CICLO_ERROR_SIMBOLO 8288
   SPCR               1028
-  SAVE2              804D
-  INICIO             801B
+  INICIO             8034
